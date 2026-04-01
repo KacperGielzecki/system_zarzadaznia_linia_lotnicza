@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class SystemZarzadzaniaLiniaLotniczaApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(SystemZarzadzaniaLiniaLotniczaApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(SystemZarzadzaniaLiniaLotniczaApplication.class, args);
+    }
 
 }
