@@ -17,6 +17,10 @@ public abstract class User {
     @Column(unique = true, nullable = false)
     private String pesel;
 
+    // NOWE POLE: Status konta (aktywny/nieaktywny)
+    // Domyślnie ustawiamy na true
+    private boolean active = true;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getFirstName() { return firstName; }
@@ -25,4 +29,8 @@ public abstract class User {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public String getPesel() { return pesel; }
     public void setPesel(String pesel) { this.pesel = pesel; }
+
+    // GETTER I SETTER DLA STATUSU
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 }

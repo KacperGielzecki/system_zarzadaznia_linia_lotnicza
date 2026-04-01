@@ -19,7 +19,6 @@
         }
         h2 { color: #333; margin-bottom: 20px; }
 
-        /* Styl dla komunikatów o błędach */
         .alert-danger {
             background-color: #ffebee;
             color: #c62828;
@@ -27,7 +26,14 @@
             border-radius: 4px;
             border-left: 5px solid #f44336;
             margin-bottom: 20px;
-            display: block; /* Zmień na 'none', jeśli chcesz ukryć domyślnie */
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .form-group { margin-bottom: 15px; }
@@ -39,12 +45,6 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
-        }
-
-        /* Styl dla pól z błędem */
-        input.is-invalid, select.is-invalid {
-            border: 2px solid #f44336;
-            background-color: #fff8f8;
         }
 
         .btn-submit {
@@ -67,14 +67,9 @@
 <div class="form-container">
     <h2>Dodaj nowego pracownika</h2>
 
-    <div class="alert-danger" th:if="${error}" th:text="${error}">
-        Błąd!
-    </div>
+    <div class="alert-danger" th:if="${error}" th:text="${error}"></div>
 
-    <div style="background-color: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 4px; margin-bottom: 20px;"
-         th:if="${success}" th:text="${success}">
-        Sukces!
-    </div>
+    <div class="alert-success" th:if="${success}" th:text="${success}"></div>
 
     <form th:action="@{/dodaj-pracownika}" th:object="${employeeForm}" method="post">
 
@@ -127,21 +122,26 @@
 </div>
 
 <script>
-    // Prosty skrypt pokazujący odpowiednie pola w zależności od roli
     function toggleFields() {
         const role = document.getElementById('role').value;
         const crewFields = document.getElementById('crewFields');
         const mechanicFields = document.getElementById('mechanicFields');
 
+        // Reset widoczności
         crewFields.classList.add('hidden');
         mechanicFields.classList.add('hidden');
 
+        // Logika pokazywania
         if (role === 'PILOT' || role === 'STEWARDESS') {
             crewFields.classList.remove('hidden');
         } else if (role === 'MECHANIC') {
             mechanicFields.classList.remove('hidden');
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleFields();
+    });
 </script>
 
 </body>

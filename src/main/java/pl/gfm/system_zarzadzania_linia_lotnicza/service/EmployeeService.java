@@ -5,6 +5,8 @@ import pl.gfm.system_zarzadzania_linia_lotnicza.dto.EmployeeForm;
 import pl.gfm.system_zarzadzania_linia_lotnicza.model.*;
 import pl.gfm.system_zarzadzania_linia_lotnicza.repository.UserRepository;
 
+import java.time.LocalDate;
+
 @Service
 public class EmployeeService {
 
@@ -15,40 +17,71 @@ public class EmployeeService {
     }
 
     public void registerEmployee(EmployeeForm form) {
-        // PROGRAMOWANIE DEFENSYWNE: Sprawdzamy czy PESEL już istnieje
+        // 1. PODSTAWOWA OBRONA: Sprawdzamy czy dane nie są puste (Imię, Nazwisko, PESEL)
+        if (form.getFirstName() == null || form.getFirstName().isBlank() ||
+                form.getLastName() == null || form.getLastName().isBlank() ||
+                form.getPesel() == null || form.getPesel().isBlank()) {
+            throw new IllegalArgumentException("Imię, nazwisko oraz PESEL są wymagane!");
+        }
+
+        // 2. UNIKALNOŚĆ: Sprawdzamy czy PESEL już istnieje
         if (userRepository.existsByPesel(form.getPesel())) {
             throw new IllegalArgumentException("Pracownik o numerze PESEL " + form.getPesel() + " już istnieje w systemie!");
         }
 
         User newUser;
+        LocalDate today = LocalDate.now();
 
-        // Tworzymy odpowiedni obiekt na podstawie roli z formularza
+        // 3. LOGIKA SPECYFICZNA DLA ROLI
         switch (form.getRole()) {
             case "PILOT":
+                if (form.getLicenseDate() == null || form.getMedExams() == null) {
+                    throw new IllegalArgumentException("Dla Pilota wymagana jest data licencji i badań!");
+                }
                 Pilot pilot = new Pilot();
                 pilot.setMedicalExamExpiryDate(form.getMedExams());
                 pilot.setLicenseExpiryDate(form.getLicenseDate());
                 newUser = pilot;
+
+                // REGUŁA DEFENSYWNA: Jeśli licencja LUB badania wygasły -> status nieaktywny
+                if (form.getLicenseDate().isBefore(today) || form.getMedExams().isBefore(today)) {
+                    newUser.setActive(false);
+                }
                 break;
+
             case "STEWARDESS":
+                if (form.getLicenseDate() == null || form.getMedExams() == null) {
+                    throw new IllegalArgumentException("Dla Stewardess wymagana jest data licencji i badań!");
+                }
                 Stewardess stewardess = new Stewardess();
                 stewardess.setMedicalExamExpiryDate(form.getMedExams());
                 stewardess.setLicenseExpiryDate(form.getLicenseDate());
                 newUser = stewardess;
+
+                // REGUŁA DEFENSYWNA: Jeśli licencja LUB badania wygasły -> status nieaktywny
+                if (form.getLicenseDate().isBefore(today) || form.getMedExams().isBefore(today)) {
+                    newUser.setActive(false);
+                }
                 break;
+
             case "MECHANIC":
+                // REGUŁA: Mechanik MUSI mieć certyfikat
+                if (form.getCertNumber() == null || form.getCertNumber().isBlank()) {
+                    throw new IllegalArgumentException("Numer certyfikatu jest wymagany dla mechanika!");
+                }
                 Mechanic mechanic = new Mechanic();
                 mechanic.setCertificateNumber(form.getCertNumber());
                 newUser = mechanic;
                 break;
+
             case "ADMIN":
                 newUser = new Administrator();
                 break;
+
             default:
-                throw new IllegalArgumentException("Nieznana rola pracownika!");
+                throw new IllegalArgumentException("Nie wybrano poprawnej roli pracownika!");
         }
 
-        // Uzupełniamy wspólne dane
         newUser.setFirstName(form.getFirstName());
         newUser.setLastName(form.getLastName());
         newUser.setPesel(form.getPesel());
