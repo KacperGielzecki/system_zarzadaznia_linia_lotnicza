@@ -19,7 +19,6 @@
         }
         h2 { color: #333; margin-bottom: 20px; }
 
-        /* Styl dla komunikatów o błędach */
         .alert-danger {
             background-color: #ffebee;
             color: #c62828;
@@ -27,7 +26,14 @@
             border-radius: 4px;
             border-left: 5px solid #f44336;
             margin-bottom: 20px;
-            display: block; /* Zmień na 'none', jeśli chcesz ukryć domyślnie */
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
 
         .form-group { margin-bottom: 15px; }
@@ -39,12 +45,6 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
-        }
-
-        /* Styl dla pól z błędem */
-        input.is-invalid, select.is-invalid {
-            border: 2px solid #f44336;
-            background-color: #fff8f8;
         }
 
         .btn-submit {
@@ -67,29 +67,30 @@
 <div class="form-container">
     <h2>Dodaj nowego pracownika</h2>
 
-    <div class="alert-danger">
-        <strong>Błąd!</strong> Ten PESEL jest już w systemie lub wpisano błędną datę.
-    </div>
+    <div class="alert-danger" th:if="${error}" th:text="${error}"></div>
 
-    <form action="#" method="post">
+    <div class="alert-success" th:if="${success}" th:text="${success}"></div>
+
+    <form th:action="@{/dodaj-pracownika}" th:object="${employeeForm}" method="post">
+
         <div class="form-group">
             <label for="firstName">Imię:</label>
-            <input type="text" id="firstName" name="firstName" required>
+            <input type="text" id="firstName" th:field="*{firstName}" required>
         </div>
 
         <div class="form-group">
             <label for="lastName">Nazwisko:</label>
-            <input type="text" id="lastName" name="lastName" required>
+            <input type="text" id="lastName" th:field="*{lastName}" required>
         </div>
 
         <div class="form-group">
             <label for="pesel">PESEL:</label>
-            <input type="text" id="pesel" name="pesel" class="is-invalid" required>
+            <input type="text" id="pesel" th:field="*{pesel}" required>
         </div>
 
         <div class="form-group">
             <label for="role">Rola w systemie:</label>
-            <select id="role" name="role" onchange="toggleFields()" required>
+            <select id="role" th:field="*{role}" onchange="toggleFields()" required>
                 <option value="">-- Wybierz rolę --</option>
                 <option value="PILOT">Pilot</option>
                 <option value="STEWARDESS">Stewardesa</option>
@@ -101,18 +102,18 @@
         <div id="crewFields" class="hidden">
             <div class="form-group">
                 <label for="medExams">Data ważności badań lekarskich:</label>
-                <input type="date" id="medExams" name="medExams">
+                <input type="date" id="medExams" th:field="*{medExams}">
             </div>
             <div class="form-group">
                 <label for="licenseDate">Data ważności licencji:</label>
-                <input type="date" id="licenseDate" name="licenseDate">
+                <input type="date" id="licenseDate" th:field="*{licenseDate}">
             </div>
         </div>
 
         <div id="mechanicFields" class="hidden">
             <div class="form-group">
                 <label for="certNumber">Numer certyfikatu:</label>
-                <input type="text" id="certNumber" name="certNumber">
+                <input type="text" id="certNumber" th:field="*{certNumber}">
             </div>
         </div>
 
@@ -121,21 +122,26 @@
 </div>
 
 <script>
-    // Prosty skrypt pokazujący odpowiednie pola w zależności od roli
     function toggleFields() {
         const role = document.getElementById('role').value;
         const crewFields = document.getElementById('crewFields');
         const mechanicFields = document.getElementById('mechanicFields');
 
+        // Reset widoczności
         crewFields.classList.add('hidden');
         mechanicFields.classList.add('hidden');
 
+        // Logika pokazywania
         if (role === 'PILOT' || role === 'STEWARDESS') {
             crewFields.classList.remove('hidden');
         } else if (role === 'MECHANIC') {
             mechanicFields.classList.remove('hidden');
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleFields();
+    });
 </script>
 
 </body>
