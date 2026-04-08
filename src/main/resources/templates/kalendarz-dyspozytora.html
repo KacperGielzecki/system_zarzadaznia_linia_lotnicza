@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Kalendarz Dyspozytora</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h1>📅 Kalendarz Dyspozytora</h1>
+
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="card p-4 mb-4">
+        <h3>Zaplanuj nowy rejs</h3>
+        <form th:action="@{/zaplanuj-lot}" method="post" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Trasa</label>
+                <input type="text" name="route" class="form-control" placeholder="np. WAW-LHR" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Samolot (Sprawne)</label>
+                <select name="planeId" class="form-select" required>
+                    <option th:each="plane : ${availablePlanes}" th:value="${plane.id}"
+                            th:text="${plane.model + ' (' + plane.registrationNumber + ')'}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Pilot (Z uprawnieniami)</label>
+                <select name="pilotId" class="form-select" required>
+                    <option th:each="p : ${activePilots}" th:value="${p.id}"
+                            th:text="${p.firstName + ' ' + p.lastName}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Data i godzina</label>
+                <input type="datetime-local" name="departureTime" class="form-control" required>
+            </div>
+            <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-primary">Dodaj do kalendarza</button>
+            </div>
+        </form>
+    </div>
+
+    <h3>Zatwierdzone loty i wolne maszyny</h3>
+    <table class="table table-striped table-hover mt-3 bg-white">
+        <thead class="table-dark">
+        <tr>
+            <th>Data</th>
+            <th>Trasa</th>
+            <th>Samolot</th>
+            <th>Pilot</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="f : ${scheduledFlights}">
+            <td th:text="${#temporals.format(f.departureTime, 'dd-MM-yyyy HH:mm')}"></td>
+            <td th:text="${f.route}"></td>
+            <td th:text="${f.airplane.model}"></td>
+            <td th:text="${f.pilot.firstName + ' ' + f.pilot.lastName}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
