@@ -1,6 +1,7 @@
 package pl.gfm.system_zarzadzania_linia_lotnicza.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -17,9 +18,10 @@ public abstract class User {
     @Column(unique = true, nullable = false)
     private String pesel;
 
-    // NOWE POLE: Status konta (aktywny/nieaktywny)
-    // Domyślnie ustawiamy na true
     private boolean active = true;
+
+    // NOWE POLE (Zadanie 16.04)
+    private LocalDateTime lastFlightEndTime;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -29,8 +31,10 @@ public abstract class User {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public String getPesel() { return pesel; }
     public void setPesel(String pesel) { this.pesel = pesel; }
-
-    // GETTER I SETTER DLA STATUSU
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    // NOWE GETTERY I SETTERY
+    public LocalDateTime getLastFlightEndTime() { return lastFlightEndTime; }
+    public void setLastFlightEndTime(LocalDateTime lastFlightEndTime) { this.lastFlightEndTime = lastFlightEndTime; }
 }
