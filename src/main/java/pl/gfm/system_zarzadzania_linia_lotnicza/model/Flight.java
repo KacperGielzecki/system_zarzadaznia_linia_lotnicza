@@ -15,15 +15,28 @@ public class Flight {
     private String route;
     private LocalDateTime departureTime;
 
-    // NOWE POLA (Zadania 16.04 i 23.04)
-    private double distance;      // Dystans trasy
-    private double cargoWeight;   // Waga bagażu
-    private boolean fuelApproved = false; // Czy mechanik zatankował
-    private boolean notified = false;     // Czy załoga widziała powiadomienie
+    // ETAP 16.04
+    private double distance;              // Dystans trasy w km
+    private boolean notified = false;     // Czy załoga widziała powiadomienie o locie
+
+    // ETAP 23.04
+    private double cargoWeight;           // Waga bagażu/cargo
+    private double passengerWeight;       // Waga pasażerów (potrzebna do wyważenia 30.04)
+    private double requiredFuel;          // Wyliczone zapotrzebowanie na paliwo
+    private boolean fuelApproved = false; // Czy mechanik zatwierdził tankowanie
+
+    // ETAP 30.04
+    private double fuelFromSensors;       // Ilość paliwa odczytana z czujników samolotu
+    private boolean loadsheetAccepted = false; // Czy pilot zatwierdził arkusz wyważenia
 
     @ManyToOne
     private Airplane airplane;
 
     @ManyToOne
     private User pilot;
+
+    // Pomocnicza metoda do obliczenia całkowitej masy startowej
+    public double getTotalWeight() {
+        return cargoWeight + passengerWeight + requiredFuel;
+    }
 }

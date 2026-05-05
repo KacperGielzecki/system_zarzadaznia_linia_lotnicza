@@ -11,6 +11,10 @@ public class EmployeeForm {
     private LocalDate licenseDate;
     private String certNumber;
 
+    // NOWE POLE (Zadanie 09.04)
+    // Pozwala przesłać z formularza listę modeli, np. "Boeing 737, Airbus A320"
+    private String allowedModels;
+
     public String getFirstName() {
         return firstName;
     }
@@ -65,5 +69,13 @@ public class EmployeeForm {
 
     public void setCertNumber(String certNumber) {
         this.certNumber = certNumber;
+    }
+
+    public String getAllowedModels() {
+        return allowedModels;
+    }
+
+    public void setAllowedModels(String allowedModels) {
+        this.allowedModels = allowedModels;
     }
 }

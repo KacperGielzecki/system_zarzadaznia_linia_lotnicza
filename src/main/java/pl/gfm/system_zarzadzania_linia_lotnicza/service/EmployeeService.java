@@ -17,14 +17,14 @@ public class EmployeeService {
     }
 
     public void registerEmployee(EmployeeForm form) {
-        // 1. PODSTAWOWA OBRONA: Sprawdzamy czy dane nie są puste (Imię, Nazwisko, PESEL)
+        // 1. Sprawdzamy czy dane nie są puste (Imię, Nazwisko, PESEL)
         if (form.getFirstName() == null || form.getFirstName().isBlank() ||
                 form.getLastName() == null || form.getLastName().isBlank() ||
                 form.getPesel() == null || form.getPesel().isBlank()) {
             throw new IllegalArgumentException("Imię, nazwisko oraz PESEL są wymagane!");
         }
 
-        // 2. UNIKALNOŚĆ: Sprawdzamy czy PESEL już istnieje
+        // 2. Sprawdzamy czy PESEL już istnieje
         if (userRepository.existsByPesel(form.getPesel())) {
             throw new IllegalArgumentException("Pracownik o numerze PESEL " + form.getPesel() + " już istnieje w systemie!");
         }
@@ -41,9 +41,13 @@ public class EmployeeService {
                 Pilot pilot = new Pilot();
                 pilot.setMedicalExamExpiryDate(form.getMedExams());
                 pilot.setLicenseExpiryDate(form.getLicenseDate());
+
+                // DODANO (09.04): Przypisanie modeli samolotów z formularza
+                pilot.setAllowedModels(form.getAllowedModels());
+
                 newUser = pilot;
 
-                // REGUŁA DEFENSYWNA: Jeśli licencja LUB badania wygasły -> status nieaktywny
+                // Jeśli licencja LUB badania wygasły -> status nieaktywny
                 if (form.getLicenseDate().isBefore(today) || form.getMedExams().isBefore(today)) {
                     newUser.setActive(false);
                 }
@@ -58,14 +62,14 @@ public class EmployeeService {
                 stewardess.setLicenseExpiryDate(form.getLicenseDate());
                 newUser = stewardess;
 
-                // REGUŁA DEFENSYWNA: Jeśli licencja LUB badania wygasły -> status nieaktywny
+                // Jeśli licencja LUB badania wygasły -> status nieaktywny
                 if (form.getLicenseDate().isBefore(today) || form.getMedExams().isBefore(today)) {
                     newUser.setActive(false);
                 }
                 break;
 
             case "MECHANIC":
-                // REGUŁA: Mechanik MUSI mieć certyfikat
+                // Mechanik MUSI mieć certyfikat
                 if (form.getCertNumber() == null || form.getCertNumber().isBlank()) {
                     throw new IllegalArgumentException("Numer certyfikatu jest wymagany dla mechanika!");
                 }
