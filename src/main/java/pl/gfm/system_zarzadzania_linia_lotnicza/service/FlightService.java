@@ -21,19 +21,21 @@ public class FlightService {
     }
 
     @Transactional
-    public void scheduleFlight(String route, Long planeId, Long pilotId, LocalDateTime departureTime, double distance, double weight) {
+    public void scheduleFlight(String route, Long planeId, Long pilotId, LocalDateTime departureTime,
+                               double distance, double cargoWeight, double passengerWeight) {
+
         Airplane plane = airplaneRepository.findById(planeId).orElseThrow(() -> new IllegalArgumentException("Błąd samolotu"));
         User user = userRepository.findById(pilotId).orElseThrow(() -> new IllegalArgumentException("Błąd pilota"));
 
-        // BLOKADA DATY WSTECZNEJ
+        // 1. BLOKADA DATY WSTECZNEJ
         if (departureTime.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Błąd: Nie można zaplanować lotu z datą wsteczną!");
         }
 
-        // Czy samolot sprawny?
+        // 2. Czy samolot sprawny?
         if (!plane.isFunctional()) throw new IllegalArgumentException("Samolot jest niesprawny!");
 
-        // Czy pilot aktywny i ma uprawnienia na model?
+        // 3. Czy pilot aktywny i ma uprawnienia na model?
         if (!user.isActive()) throw new IllegalArgumentException("Pilot jest nieaktywny!");
 
         if (user instanceof Pilot pilot) {
@@ -43,16 +45,17 @@ public class FlightService {
             }
         }
 
-        // 12h odpoczynku
+        // 4. 12h odpoczynku
         if (user.getLastFlightEndTime() != null && user.getLastFlightEndTime().plusHours(12).isAfter(departureTime)) {
             throw new IllegalArgumentException("Odmowa: Pilot musi odpocząć minimum 12h od zakończenia poprzedniego lotu!");
         }
 
-        // Przeciążenie
-        if (weight > 15000) throw new IllegalArgumentException("Przeciążenie! Max dopuszczalna masa to 15000kg.");
+        // 5. Przeciążenie (suma cargo + pasażerów)
+        double totalWeight = cargoWeight + passengerWeight;
+        if (totalWeight > 15000) throw new IllegalArgumentException("Przeciążenie! Max dopuszczalna masa to 15000kg. Twoja: " + totalWeight);
 
-        // Paliwo
-        double calculatedFuel = (distance * 4) + 500;
+        // 6. Paliwo (uwzględniamy dystans i wagi)
+        double calculatedFuel = (distance * 4) + 500 + (totalWeight * 0.05);
 
         Flight flight = new Flight();
         flight.setRoute(route);
@@ -60,8 +63,11 @@ public class FlightService {
         flight.setPilot(user);
         flight.setDepartureTime(departureTime);
         flight.setDistance(distance);
-        flight.setCargoWeight(weight);
+        flight.setCargoWeight(cargoWeight);
+        flight.setPassengerWeight(passengerWeight); // Pamiętaj o dodaniu tego pola w modelu Flight
         flight.setRequiredFuel(calculatedFuel);
+        flight.setFuelApproved(false);
+        flight.setLoadsheetAccepted(false);
 
         // AKTUALIZACJA STATUSU PILOTA
         user.setLastFlightEndTime(departureTime.plusHours(2));

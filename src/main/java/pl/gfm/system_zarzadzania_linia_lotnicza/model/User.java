@@ -18,6 +18,9 @@ public abstract class User {
     @Column(unique = true, nullable = false)
     private String pesel;
 
+    @Column(unique = true, nullable = false)
+    private String email;
+
     private boolean active = true;
 
     // NOWE POLE (Zadanie 16.04)
@@ -31,6 +34,11 @@ public abstract class User {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public String getPesel() { return pesel; }
     public void setPesel(String pesel) { this.pesel = pesel; }
+
+    // Getter i Setter dla Email
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 

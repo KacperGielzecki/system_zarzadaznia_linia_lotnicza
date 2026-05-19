@@ -12,103 +12,123 @@
         .form-label { font-weight: bold; color: #333; }
         .hidden { display: none !important; }
         .btn-submit { background: #1e3c72; border: none; padding: 12px; transition: 0.3s; }
-        .btn-submit:hover { background: #152e5a; transform: translateY(-2px); }
+        .btn-submit:hover { background: #2a5298; transform: translateY(-2px); }
     </style>
 </head>
 <body>
 
-<div class="header-section shadow">
-    <div class="container text-center">
-        <h1><i class="fa-solid fa-user-plus me-3"></i>Nowy Pracownik Systemu</h1>
-        <p class="lead">Rejestracja członków załogi, mechaników i administratorów</p>
+<div class="header-section text-center">
+    <div class="container">
+        <h1><i class="fa-solid fa-user-plus me-2"></i> Panel Rejestracji Pracowników</h1>
+        <p class="lead mb-0">Wprowadź dane nowego członka personelu linii lotniczej</p>
     </div>
 </div>
 
 <div class="container mb-5">
     <div class="row justify-content-center">
-        <div class="col-lg-7">
+        <div class="col-lg-8">
+            <div class="card p-4 p-md-5">
 
-            <div class="alert alert-danger shadow-sm" th:if="${error}" th:text="${error}"></div>
-            <div class="alert alert-success shadow-sm" th:if="${success}" th:text="${success}"></div>
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
 
-            <div class="card p-4">
-                <form th:action="@{/dodaj-pracownika}" th:object="${employeeForm}" method="post">
-                    <div class="row g-3">
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i> <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <form th:action="@{/dodaj-pracownika}" th:object="${employeeForm}" method="post" novalidate>
+
+                    <h4 class="mb-3 text-secondary border-bottom pb-2"><i class="fa-solid fa-address-card me-2"></i>Dane podstawowe</h4>
+
+                    <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label">Imię</label>
-                            <input type="text" class="form-control" th:field="*{firstName}" required>
+                            <label for="firstName" class="form-label"><i class="fa-solid fa-user me-1 text-primary"></i> Imię</label>
+                            <input type="text" th:field="*{firstName}" id="firstName" class="form-control" placeholder="np. Jan" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Nazwisko</label>
-                            <input type="text" class="form-control" th:field="*{lastName}" required>
+                            <label for="lastName" class="form-label"><i class="fa-solid fa-user me-1 text-primary"></i> Nazwisko</label>
+                            <input type="text" th:field="*{lastName}" id="lastName" class="form-control" placeholder="np. Kowalski" required>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">PESEL</label>
-                            <input type="text" class="form-control" th:field="*{pesel}" maxlength="11" required>
+                        <div class="col-md-6">
+                            <label for="pesel" class="form-label"><i class="fa-solid fa-id-card me-1 text-primary"></i> PESEL</label>
+                            <input type="text" th:field="*{pesel}" id="pesel" class="form-control" placeholder="11 cyfr" required>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Rola w systemie</label>
-                            <select id="role" class="form-select" th:field="*{role}" onchange="toggleFields()" required>
-                                <option value="">-- Wybierz rolę --</option>
-                                <option value="PILOT">Pilot</option>
-                                <option value="STEWARDESS">Stewardesa</option>
-                                <option value="MECHANIC">Mechanik</option>
+
+                        <div class="col-md-6">
+                            <label for="email" class="form-label"><i class="fa-solid fa-envelope me-1 text-primary"></i> Adres E-mail</label>
+                            <input type="text" th:field="*{email}" id="email" class="form-control" placeholder="np. jan.kowalski@gfm.pl">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="role" class="form-label"><i class="fa-solid fa-briefcase me-1 text-primary"></i> Rola w systemie</label>
+                            <select th:field="*{role}" id="role" class="form-select" onchange="toggleFields()" required>
+                                <option value="" disabled selected>-- Wybierz stanowisko --</option>
                                 <option value="ADMIN">Administrator</option>
+                                <option value="DYSPOZYTOR">Dyspozytor</option>
+                                <option value="PILOT">Pilot</option>
+                                <option value="STEWARDESS">Stewardessa</option>
+                                <option value="MECHANIC">Mechanik</option>
                             </select>
                         </div>
+                    </div>
 
-                        <!-- Sekcja dla Załogi (Pilot / Stewardesa) -->
-                        <div id="crewFields" class="col-12 hidden">
-                            <div class="card bg-light p-3 border-0 mt-2">
-                                <h6 class="text-primary mb-3"><i class="fa-solid fa-id-card me-2"></i>Uprawnienia Lotnicze</h6>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label small">Data ważności badań</label>
-                                        <input type="date" class="form-control" th:field="*{medExams}">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label small">Ważność licencji</label>
-                                        <input type="date" class="form-control" th:field="*{licenseDate}">
-                                    </div>
-
-                                    <!-- NOWE POLE: Specyficzne dla Pilota -->
-                                    <div id="pilotSpecificFields" class="col-12 mt-2 hidden">
-                                        <label class="form-label small">Uprawnienia na modele samolotów</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fa-solid fa-plane"></i></span>
-                                            <input type="text" class="form-control" th:field="*{allowedModels}" placeholder="np. Boeing 737, Airbus A320">
-                                        </div>
-                                        <div class="form-text">Wpisz nazwy modeli oddzielone przecinkami.</div>
-                                    </div>
-                                </div>
+                    <div id="crewFields" class="hidden">
+                        <h4 class="mb-3 text-secondary border-bottom pb-2"><i class="fa-solid fa-plane-arrival me-2"></i>Uprawnienia personelu latającego</h4>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="medExams" class="form-label"><i class="fa-solid fa-heartbeat me-1 text-danger"></i> Ważność badań medycznych</label>
+                                <input type="date" th:field="*{medExams}" id="medExams" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="licenseDate" class="form-label"><i class="fa-solid fa-id-badge me-1 text-warning"></i> Ważność licencji personelu</label>
+                                <input type="date" th:field="*{licenseDate}" id="licenseDate" class="form-control">
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Sekcja dla Mechanika -->
-                        <div id="mechanicFields" class="col-12 hidden">
-                            <div class="card bg-light p-3 border-0 mt-2">
-                                <h6 class="text-warning mb-3"><i class="fa-solid fa-certificate me-2"></i>Certyfikaty</h6>
-                                <label class="form-label small">Numer certyfikatu mechanika</label>
-                                <input type="text" class="form-control" th:field="*{certNumber}">
+                    <div id="pilotSpecificFields" class="hidden">
+                        <h4 class="mb-3 text-secondary border-bottom pb-2"><i class="fa-solid fa-sliders me-2"></i>Specyfikacja Pilota</h4>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label for="allowedModels" class="form-label"><i class="fa-solid fa-plane text-success me-1"></i> Dopuszczone modele samolotów (oddziel przecinkami)</label>
+                                <input type="text" th:field="*{allowedModels}" id="allowedModels" class="form-control" placeholder="np. Boeing 737, Airbus A320">
                             </div>
                         </div>
+                    </div>
 
-                        <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-primary btn-submit w-100 text-white fw-bold shadow">
-                                <i class="fa-solid fa-user-check me-2"></i>Zapisz i Utwórz Konto
+                    <div id="mechanicFields" class="hidden">
+                        <h4 class="mb-3 text-secondary border-bottom pb-2"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Uprawnienia techniczne</h4>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label for="certNumber" class="form-label"><i class="fa-solid fa-certificate me-1 text-warning"></i> Numer Certyfikatu Licencji Mechanika (PART-66)</label>
+                                <input type="text" th:field="*{certNumber}" id="certNumber" class="form-control" placeholder="np. PL.66.12345">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col">
+                            <button type="submit" class="btn btn-primary btn-submit w-100 text-white fw-bold shadow-sm">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Zarejestruj pracownika w bazie
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <div class="text-center mt-4">
-                <a href="/kalendarz" class="text-muted text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Wróć do systemu</a>
+            <div class="text-center mt-5 mb-5">
+                <a href="/logout" class="btn btn-danger px-4 shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket me-2"></i>Wyloguj się
+                </a>
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function toggleFields() {
         const role = document.getElementById('role').value;
@@ -116,15 +136,12 @@
         const mechanicFields = document.getElementById('mechanicFields');
         const pilotSpecificFields = document.getElementById('pilotSpecificFields');
 
-        // Resetuj widoczność
         crewFields.classList.add('hidden');
         mechanicFields.classList.add('hidden');
         pilotSpecificFields.classList.add('hidden');
 
-        // Pokaż sekcje zależnie od roli
         if (role === 'PILOT' || role === 'STEWARDESS') {
             crewFields.classList.remove('hidden');
-            // Pokaż dodatkowe pole tylko dla Pilota
             if (role === 'PILOT') {
                 pilotSpecificFields.classList.remove('hidden');
             }
@@ -132,9 +149,9 @@
             mechanicFields.classList.remove('hidden');
         }
     }
-    // Uruchom przy załadowaniu, żeby obsłużyć ewentualne błędy walidacji (zachowanie roli)
-    document.addEventListener("DOMContentLoaded", toggleFields);
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleFields();
+    });
 </script>
-
 </body>
 </html>

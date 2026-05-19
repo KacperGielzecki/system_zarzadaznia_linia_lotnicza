@@ -1,5 +1,6 @@
 package pl.gfm.system_zarzadzania_linia_lotnicza.service;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,67 +15,92 @@ public class FlightController {
     private final FlightService flightService;
     private final UserRepository userRepository;
     private final FlightRepository flightRepository;
+    private final AirplaneRepository airplaneRepository;
 
-    public FlightController(FlightService flightService, UserRepository userRepository, FlightRepository flightRepository) {
+    public FlightController(FlightService flightService,
+                            UserRepository userRepository,
+                            FlightRepository flightRepository,
+                            AirplaneRepository airplaneRepository) {
         this.flightService = flightService;
         this.userRepository = userRepository;
         this.flightRepository = flightRepository;
+        this.airplaneRepository = airplaneRepository;
     }
 
+    // --- KALENDARZ DYSPOZYTORA ---
     @GetMapping("/kalendarz")
-    public String pokazKalendarz(Model model) {
+    public String pokazKalendarz(HttpSession session, Model model) {
+        User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+        if (uzytkownik == null || !(uzytkownik instanceof Dispatcher)) {
+            return "redirect:/login?error=BrakDostepu";
+        }
+
         model.addAttribute("scheduledFlights", flightService.getAllFlights());
         model.addAttribute("availablePlanes", flightService.getAvailablePlanes());
-
-        // POPRAWKA: Filtrowanie po typie klasy (Zadanie 16.04)
-        // Sprawdzamy czy obiekt User fizycznie jest Pilotem
-        List<User> activePilots = userRepository.findAll().stream()
+        model.addAttribute("activePilots", userRepository.findAll().stream()
                 .filter(u -> u.isActive() && u instanceof Pilot)
-                .toList();
-        model.addAttribute("activePilots", activePilots);
+                .toList());
 
         return "kalendarz-dyspozytora";
     }
 
+    // --- ZAPLANUJ LOT (DYSPOZYTOR) - POPRAWIONA METODA Z SERWISEM ---
     @PostMapping("/zaplanuj-lot")
-    public String zaplanujLot(@RequestParam String route, @RequestParam Long planeId,
-                              @RequestParam Long pilotId, @RequestParam String departureTime,
-                              @RequestParam double distance, @RequestParam double weight,
-                              @RequestParam(defaultValue = "0") double passengerWeight, Model model) {
+    public String zaplanujLot(@RequestParam String route,
+                              @RequestParam double distance,
+                              @RequestParam double cargoWeight,
+                              @RequestParam double passengerWeight,
+                              @RequestParam Long planeId,
+                              @RequestParam Long pilotId,
+                              @RequestParam LocalDateTime departureTime,
+                              HttpSession session,
+                              Model model) {
+
+        User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+        if (uzytkownik == null || !(uzytkownik instanceof Dispatcher)) {
+            return "redirect:/login?error=BrakDostepu";
+        }
+
         try {
-            // Rejestracja lotu (Zadania 09.04 - 23.04)
-            flightService.scheduleFlight(route, planeId, pilotId, LocalDateTime.parse(departureTime), distance, weight);
-
-            // POPRAWKA: Pobieramy ostatni lot, by zapisać wagę pasażerów (Zadanie 30.04)
-            List<Flight> allFlights = flightRepository.findAll();
-            if (!allFlights.isEmpty()) {
-                Flight lastFlight = allFlights.get(allFlights.size() - 1);
-                lastFlight.setPassengerWeight(passengerWeight);
-                flightRepository.save(lastFlight);
-            }
-
-            return "redirect:/kalendarz";
-        } catch (Exception e) {
+            // Wykorzystujemy serwis, który sprawdza uprawnienia, odpoczynek i liczy paliwo!
+            flightService.scheduleFlight(route, planeId, pilotId, departureTime, distance, cargoWeight, passengerWeight);
+            return "redirect:/kalendarz?success=LotZaplanowany";
+        } catch (IllegalArgumentException e) {
+            // W razie błędu (np. pilot bez uprawnień) wracamy do kalendarza z błędem
             model.addAttribute("error", e.getMessage());
-            return pokazKalendarz(model);
+            model.addAttribute("scheduledFlights", flightService.getAllFlights());
+            model.addAttribute("availablePlanes", flightService.getAvailablePlanes());
+            model.addAttribute("activePilots", userRepository.findAll().stream()
+                    .filter(u -> u.isActive() && u instanceof Pilot).toList());
+            return "kalendarz-dyspozytora";
         }
     }
 
+    // --- PANEL MECHANIKA ---
     @GetMapping("/mechanik")
-    public String panelMechanika(Model model) {
+    public String panelMechanika(HttpSession session, Model model) {
+        User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+        if (uzytkownik == null || !(uzytkownik instanceof Mechanic)) {
+            return "redirect:/login?error=BrakDostepu";
+        }
         model.addAttribute("allFlights", flightService.getAllFlights());
         return "panel-mechanika";
     }
 
     @PostMapping("/zatwierdz-paliwo")
-    public String zatwierdzPaliwo(@RequestParam Long id, @RequestParam double sensorFuel, Model model) {
-        Flight f = flightRepository.findById(id).orElseThrow();
+    public String zatwierdzPaliwo(@RequestParam Long id, @RequestParam double sensorFuel, HttpSession session, Model model) {
+        User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+        if (uzytkownik == null || !(uzytkownik instanceof Mechanic)) {
+            return "redirect:/login?error=BrakDostepu";
+        }
 
-        // Blokada czujników - tolerancja 5% (Zadanie 30.04)
+        Flight f = flightRepository.findById(id).orElseThrow();
         double diff = Math.abs(f.getRequiredFuel() - sensorFuel);
+
         if (diff > (f.getRequiredFuel() * 0.05)) {
-            model.addAttribute("error", "Błąd czujników! Różnica paliwa zbyt duża. Start zablokowany.");
-            return panelMechanika(model);
+            model.addAttribute("error", "Błąd czujników! Różnica paliwa zbyt duża.");
+            model.addAttribute("allFlights", flightService.getAllFlights());
+            return "panel-mechanika";
         }
 
         f.setFuelFromSensors(sensorFuel);
@@ -83,22 +109,27 @@ public class FlightController {
         return "redirect:/mechanik";
     }
 
+    // --- PANEL ZAŁOGI (PILOT) ---
     @GetMapping("/zaloga")
-    public String panelZalogi(Model model) {
+    public String panelZalogi(HttpSession session, Model model) {
+        User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+        if (uzytkownik == null || !(uzytkownik instanceof Pilot)) {
+            return "redirect:/login?error=BrakDostepu";
+        }
         model.addAttribute("allFlights", flightService.getAllFlights());
         return "panel-zalogi";
     }
 
     @PostMapping("/zatwierdz-wywazenie")
-    public String zatwierdzWywazenie(@RequestParam Long id) {
-        Flight f = flightRepository.findById(id).orElseThrow();
-
-        // Akceptacja arkusza wyważenia (Zadanie 30.04)
-        if (f.isFuelApproved()) {
-            f.setLoadsheetAccepted(true);
-            f.setNotified(true);
-            flightRepository.save(f);
+    public String zatwierdzWywazenie(@RequestParam Long id, HttpSession session) {
+        User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+        if (uzytkownik == null || !(uzytkownik instanceof Pilot)) {
+            return "redirect:/login?error=BrakDostepu";
         }
+
+        Flight f = flightRepository.findById(id).orElseThrow();
+        f.setLoadsheetAccepted(true);
+        flightRepository.save(f);
         return "redirect:/zaloga";
     }
 }
