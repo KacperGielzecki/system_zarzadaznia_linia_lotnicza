@@ -16,15 +16,18 @@ public class FlightController {
     private final UserRepository userRepository;
     private final FlightRepository flightRepository;
     private final AirplaneRepository airplaneRepository;
+    private final MaintenanceTicketRepository maintenanceTicketRepository;
 
     public FlightController(FlightService flightService,
                             UserRepository userRepository,
                             FlightRepository flightRepository,
-                            AirplaneRepository airplaneRepository) {
+                            AirplaneRepository airplaneRepository,
+                            MaintenanceTicketRepository maintenanceTicketRepository) {
         this.flightService = flightService;
         this.userRepository = userRepository;
         this.flightRepository = flightRepository;
         this.airplaneRepository = airplaneRepository;
+        this.maintenanceTicketRepository = maintenanceTicketRepository;
     }
 
     // --- KALENDARZ DYSPOZYTORA ---
@@ -44,7 +47,6 @@ public class FlightController {
         return "kalendarz-dyspozytora";
     }
 
-    // --- ZAPLANUJ LOT (DYSPOZYTOR) - POPRAWIONA METODA Z SERWISEM ---
     @PostMapping("/zaplanuj-lot")
     public String zaplanujLot(@RequestParam String route,
                               @RequestParam double distance,
@@ -84,6 +86,7 @@ public class FlightController {
             return "redirect:/login?error=BrakDostepu";
         }
         model.addAttribute("allFlights", flightService.getAllFlights());
+        model.addAttribute("allTickets", maintenanceTicketRepository.findAll());
         return "panel-mechanika";
     }
 
@@ -109,6 +112,25 @@ public class FlightController {
         return "redirect:/mechanik";
     }
 
+    @PostMapping("/napraw-usterke")
+    public String naprawUsterke(@RequestParam Long ticketId) {
+        MaintenanceTicket ticket = maintenanceTicketRepository.findById(ticketId).orElseThrow();
+        ticket.setStatus("FIXED");
+        maintenanceTicketRepository.save(ticket);
+
+        // Sprawdzenie czy samolot może wrócić do służby
+        Airplane plane = ticket.getAirplane();
+        boolean stillHasCritical = plane.getTickets().stream()
+                .anyMatch(t -> t.isCzyKrytyczna() && "OPEN".equals(t.getStatus()));
+
+        if (!stillHasCritical) {
+            plane.setFunctional(true);
+            airplaneRepository.save(plane);
+        }
+
+        return "redirect:/mechanik";
+    }
+
     // --- PANEL ZAŁOGI (PILOT) ---
     @GetMapping("/zaloga")
     public String panelZalogi(HttpSession session, Model model) {
@@ -130,6 +152,28 @@ public class FlightController {
         Flight f = flightRepository.findById(id).orElseThrow();
         f.setLoadsheetAccepted(true);
         flightRepository.save(f);
+        return "redirect:/zaloga";
+    }
+    @PostMapping("/zglos-usterke")
+    public String zglosUsterke(@RequestParam Long airplaneId,
+                               @RequestParam String opis,
+                               @RequestParam(required = false) boolean czyKrytyczna) {
+
+        Airplane plane = airplaneRepository.findById(airplaneId).orElseThrow();
+
+        MaintenanceTicket ticket = new MaintenanceTicket();
+        ticket.setAirplane(plane);
+        ticket.setOpis(opis);
+        ticket.setCzyKrytyczna(czyKrytyczna);
+        ticket.setStatus("OPEN");
+        ticket.setDataZgloszenia(LocalDateTime.now());
+
+        if (czyKrytyczna) {
+            plane.setFunctional(false); // Automatyczna blokada
+            airplaneRepository.save(plane);
+        }
+
+        maintenanceTicketRepository.save(ticket);
         return "redirect:/zaloga";
     }
 }

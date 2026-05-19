@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.gfm.system_zarzadzania_linia_lotnicza.model.*;
 import pl.gfm.system_zarzadzania_linia_lotnicza.repository.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,11 +14,16 @@ public class FlightService {
     private final FlightRepository flightRepository;
     private final AirplaneRepository airplaneRepository;
     private final UserRepository userRepository;
+    private final MaintenanceTicketRepository maintenanceTicketRepository; // Dodane repozytorium usterek
 
-    public FlightService(FlightRepository flightRepository, AirplaneRepository airplaneRepository, UserRepository userRepository) {
+    public FlightService(FlightRepository flightRepository,
+                         AirplaneRepository airplaneRepository,
+                         UserRepository userRepository,
+                         MaintenanceTicketRepository maintenanceTicketRepository) {
         this.flightRepository = flightRepository;
         this.airplaneRepository = airplaneRepository;
         this.userRepository = userRepository;
+        this.maintenanceTicketRepository = maintenanceTicketRepository;
     }
 
     @Transactional
@@ -35,44 +41,61 @@ public class FlightService {
         // 2. Czy samolot sprawny?
         if (!plane.isFunctional()) throw new IllegalArgumentException("Samolot jest niesprawny!");
 
-        // 3. Czy pilot aktywny i ma uprawnienia na model?
-        if (!user.isActive()) throw new IllegalArgumentException("Pilot jest nieaktywny!");
+        // WERYFIKACJA USTEREK KRYTYCZNYCH (NOWY PUNKT)
+        boolean hasCriticalDefect = plane.getTickets().stream()
+                .anyMatch(t -> t.isCzyKrytyczna() && "OPEN".equals(t.getStatus()));
 
-        if (user instanceof Pilot pilot) {
-            String requiredModel = plane.getModel();
-            if (pilot.getAllowedModels() == null || !pilot.getAllowedModels().contains(requiredModel)) {
-                throw new IllegalArgumentException("Pilot nie ma uprawnień na model: " + requiredModel);
-            }
+        if (hasCriticalDefect) {
+            throw new IllegalArgumentException("Odmowa: Samolot posiada aktywne usterki krytyczne!");
+        }
+
+        // 3. Walidacja Pilota
+        if (!(user instanceof Pilot pilot)) {
+            throw new IllegalArgumentException("Wybrany użytkownik nie jest pilotem!");
+        }
+
+        if (!pilot.isActive()) throw new IllegalArgumentException("Pilot jest nieaktywny!");
+
+        LocalDate flightDate = departureTime.toLocalDate();
+        if (pilot.getMedicalExamExpiryDate() == null || pilot.getMedicalExamExpiryDate().isBefore(flightDate)) {
+            throw new IllegalArgumentException("Odmowa: Badania lekarskie pilota są nieważne w dniu lotu!");
+        }
+
+        if (pilot.getLicenseExpiryDate() == null || pilot.getLicenseExpiryDate().isBefore(flightDate)) {
+            throw new IllegalArgumentException("Odmowa: Licencja pilota jest nieważna w dniu lotu!");
+        }
+
+        String requiredModel = plane.getModel();
+        if (pilot.getAllowedModels() == null || !pilot.getAllowedModels().contains(requiredModel)) {
+            throw new IllegalArgumentException("Pilot nie ma uprawnień na model: " + requiredModel);
         }
 
         // 4. 12h odpoczynku
-        if (user.getLastFlightEndTime() != null && user.getLastFlightEndTime().plusHours(12).isAfter(departureTime)) {
+        if (pilot.getLastFlightEndTime() != null && pilot.getLastFlightEndTime().plusHours(12).isAfter(departureTime)) {
             throw new IllegalArgumentException("Odmowa: Pilot musi odpocząć minimum 12h od zakończenia poprzedniego lotu!");
         }
 
-        // 5. Przeciążenie (suma cargo + pasażerów)
+        // 5. Przeciążenie
         double totalWeight = cargoWeight + passengerWeight;
-        if (totalWeight > 15000) throw new IllegalArgumentException("Przeciążenie! Max dopuszczalna masa to 15000kg. Twoja: " + totalWeight);
+        if (totalWeight > 15000) throw new IllegalArgumentException("Przeciążenie! Max dopuszczalna masa to 15000kg.");
 
-        // 6. Paliwo (uwzględniamy dystans i wagi)
+        // 6. Paliwo
         double calculatedFuel = (distance * 4) + 500 + (totalWeight * 0.05);
 
         Flight flight = new Flight();
         flight.setRoute(route);
         flight.setAirplane(plane);
-        flight.setPilot(user);
+        flight.setPilot(pilot);
         flight.setDepartureTime(departureTime);
         flight.setDistance(distance);
         flight.setCargoWeight(cargoWeight);
-        flight.setPassengerWeight(passengerWeight); // Pamiętaj o dodaniu tego pola w modelu Flight
+        flight.setPassengerWeight(passengerWeight);
         flight.setRequiredFuel(calculatedFuel);
         flight.setFuelApproved(false);
         flight.setLoadsheetAccepted(false);
 
-        // AKTUALIZACJA STATUSU PILOTA
-        user.setLastFlightEndTime(departureTime.plusHours(2));
-        userRepository.save(user);
-
+        pilot.setLastFlightEndTime(departureTime.plusHours(2));
+        userRepository.save(pilot);
         flightRepository.save(flight);
     }
 

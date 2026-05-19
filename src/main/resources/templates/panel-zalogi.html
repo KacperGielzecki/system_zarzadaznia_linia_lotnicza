@@ -11,7 +11,7 @@
         .flight-card { border: none; border-radius: 15px; border-left: 6px solid #6a11cb; transition: 0.3s; }
         .flight-card:hover { transform: scale(1.02); }
         .time-badge { background: #eee; padding: 5px 12px; border-radius: 8px; font-weight: bold; color: #444; }
-        .status-box { min-height: 80px; }
+        .status-box { min-height: 120px; }
         .ready-badge { background-color: #e7f3ff; color: #0d6efd; border: 1px dashed #0d6efd; }
     </style>
 </head>
@@ -41,35 +41,49 @@
                         <i class="fa-solid fa-plane-up me-2"></i>
                         <span th:text="${f.route}"></span>
                     </h5>
-                    <p class="card-text mb-2 text-muted">
+                    <p class="card-text mb-2 text-muted" th:if="${f.airplane != null}">
                         <i class="fa-solid fa-jet-fighter me-2"></i> Samolot:
                         <strong th:text="${f.airplane.model}"></strong>
                     </p>
 
                     <hr>
 
-                    <!-- Statusy lotu -->
                     <div class="status-box">
-                        <!-- STATUS PALIWA -->
                         <div th:if="${f.fuelApproved}" class="text-success small fw-bold mb-2">
-                            <i class="fa-solid fa-circle-check me-1"></i> Paliwo zatwierdzone (Odczyt: <span th:text="${f.fuelFromSensors}"></span> L)
+                            <i class="fa-solid fa-circle-check me-1"></i> Paliwo zatwierdzone
                         </div>
                         <div th:if="${!f.fuelApproved}" class="text-warning small fw-bold mb-2">
                             <i class="fa-solid fa-circle-pause me-1"></i> Oczekiwanie na serwis i tankowanie
                         </div>
 
-                        <!-- ZATWIERDZANIE WYWAŻENIA (Etap 30.04) -->
-                        <div th:if="${f.fuelApproved and !f.loadsheetAccepted}" class="mt-3">
+                        <div th:if="${f.fuelApproved and !f.loadsheetAccepted and f.airplane != null and f.airplane.functional}" class="mt-3">
                             <form th:action="@{/zatwierdz-wywazenie}" method="post">
-                                <!-- KLUCZOWA POPRAWKA: nazwa pola musi być 'id' tak jak w @RequestParam w kontrolerze -->
                                 <input type="hidden" name="id" th:value="${f.id}">
-                                <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
+                                <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm mb-3">
                                     <i class="fa-solid fa-file-signature me-2"></i> Zatwierdź Arkusz Wyważenia
                                 </button>
                             </form>
+
+                            <div class="p-3 bg-light rounded border">
+                                <h6 class="text-danger small"><i class="fa-solid fa-triangle-exclamation me-1"></i> Zgłoś usterkę</h6>
+                                <form th:action="@{/zglos-usterke}" method="post">
+                                    <input type="hidden" name="airplaneId" th:value="${f.airplane.id}">
+                                    <textarea name="opis" class="form-control form-control-sm mb-2" placeholder="Opis..." required></textarea>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="czyKrytyczna" id="critCheck" value="true">
+                                        <label class="form-check-label small" for="critCheck">Usterka krytyczna</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">Wyślij zgłoszenie</button>
+                                </form>
+                            </div>
                         </div>
 
-                        <!-- STATUS FINALNY -->
+                        <div th:if="${f.fuelApproved and !f.loadsheetAccepted and f.airplane != null and !f.airplane.functional}"
+                             class="alert alert-danger mt-3 small p-2">
+                            <i class="fa-solid fa-lock me-1"></i> <strong>Samolot zablokowany!</strong><br>
+                            Wykryto usterki. Czekamy na naprawę.
+                        </div>
+
                         <div th:if="${f.loadsheetAccepted}" class="ready-badge text-center p-2 rounded mt-2 fw-bold">
                             <i class="fa-solid fa-plane-departure me-2"></i> GOTOWY DO KOŁOWANIA
                         </div>
@@ -80,7 +94,7 @@
 
         <div th:if="${#lists.isEmpty(allFlights)}" class="text-center py-5">
             <i class="fa-solid fa-calendar-day fa-4x text-muted mb-3"></i>
-            <p class="lead text-muted">Brak lotów w Twoim grafiku na najbliższy czas.</p>
+            <p class="lead text-muted">Brak lotów w Twoim grafiku.</p>
         </div>
     </div>
 
@@ -90,6 +104,6 @@
         </a>
     </div>
 </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
