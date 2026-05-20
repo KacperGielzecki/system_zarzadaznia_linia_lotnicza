@@ -64,6 +64,8 @@ public class LoginController {
             return "redirect:/mechanik";
         } else if (user instanceof Pilot) {
             return "redirect:/zaloga";
+        } else if (user instanceof Stewardess) {
+            return "redirect:/stewardessa";
         }
 
         model.addAttribute("error", "Nie rozpoznano roli użytkownika w systemie.");

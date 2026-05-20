@@ -39,4 +39,9 @@ public class Flight {
     public double getTotalWeight() {
         return cargoWeight + passengerWeight + requiredFuel;
     }
+
+    @OneToOne(mappedBy = "flight", cascade = CascadeType.ALL)
+    private CabinCheck cabinCheck;
+
+    public CabinCheck getCabinCheck() { return cabinCheck; }
 }

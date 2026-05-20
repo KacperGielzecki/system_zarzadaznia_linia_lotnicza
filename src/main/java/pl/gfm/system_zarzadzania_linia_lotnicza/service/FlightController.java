@@ -135,10 +135,21 @@ public class FlightController {
     @GetMapping("/zaloga")
     public String panelZalogi(HttpSession session, Model model) {
         User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
+
+        // 1. Sprawdzenie uprawnień
         if (uzytkownik == null || !(uzytkownik instanceof Pilot)) {
             return "redirect:/login?error=BrakDostepu";
         }
-        model.addAttribute("allFlights", flightService.getAllFlights());
+
+        // 2. Pobranie wszystkich lotów przypisanych do tego konkretnego pilota
+        // Używamy strumienia, aby wyfiltrować tylko te loty, które należą do zalogowanego pilota
+        List<Flight> myFlights = flightRepository.findAll().stream()
+                .filter(f -> f.getPilot() != null && f.getPilot().getId().equals(uzytkownik.getId()))
+                .toList();
+
+        // 3. Przekazanie listy do modelu
+        model.addAttribute("allFlights", myFlights);
+
         return "panel-zalogi";
     }
 
