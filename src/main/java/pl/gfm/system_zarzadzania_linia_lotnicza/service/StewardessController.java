@@ -20,7 +20,6 @@ public class StewardessController {
 
     @GetMapping("/stewardessa")
     public String panelStewardessy(HttpSession session, Model model) {
-        // Tylko loty z paliwem (fuelApproved=true) i bez jeszcze wykonanej kontroli kabiny
         model.addAttribute("flightsToVerify", flightRepository.findAll().stream()
                 .filter(f -> f.isFuelApproved() && f.getCabinCheck() == null)
                 .toList());

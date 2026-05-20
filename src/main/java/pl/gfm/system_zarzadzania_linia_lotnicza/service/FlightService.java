@@ -33,15 +33,12 @@ public class FlightService {
         Airplane plane = airplaneRepository.findById(planeId).orElseThrow(() -> new IllegalArgumentException("Błąd samolotu"));
         User user = userRepository.findById(pilotId).orElseThrow(() -> new IllegalArgumentException("Błąd pilota"));
 
-        // 1. BLOKADA DATY WSTECZNEJ
         if (departureTime.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Błąd: Nie można zaplanować lotu z datą wsteczną!");
         }
 
-        // 2. Czy samolot sprawny?
         if (!plane.isFunctional()) throw new IllegalArgumentException("Samolot jest niesprawny!");
 
-        // WERYFIKACJA USTEREK KRYTYCZNYCH (NOWY PUNKT)
         boolean hasCriticalDefect = plane.getTickets().stream()
                 .anyMatch(t -> t.isCzyKrytyczna() && "OPEN".equals(t.getStatus()));
 
@@ -49,7 +46,6 @@ public class FlightService {
             throw new IllegalArgumentException("Odmowa: Samolot posiada aktywne usterki krytyczne!");
         }
 
-        // 3. Walidacja Pilota
         if (!(user instanceof Pilot pilot)) {
             throw new IllegalArgumentException("Wybrany użytkownik nie jest pilotem!");
         }
@@ -70,16 +66,13 @@ public class FlightService {
             throw new IllegalArgumentException("Pilot nie ma uprawnień na model: " + requiredModel);
         }
 
-        // 4. 12h odpoczynku
         if (pilot.getLastFlightEndTime() != null && pilot.getLastFlightEndTime().plusHours(12).isAfter(departureTime)) {
             throw new IllegalArgumentException("Odmowa: Pilot musi odpocząć minimum 12h od zakończenia poprzedniego lotu!");
         }
 
-        // 5. Przeciążenie
         double totalWeight = cargoWeight + passengerWeight;
         if (totalWeight > 15000) throw new IllegalArgumentException("Przeciążenie! Max dopuszczalna masa to 15000kg.");
 
-        // 6. Paliwo
         double calculatedFuel = (distance * 4) + 500 + (totalWeight * 0.05);
 
         Flight flight = new Flight();

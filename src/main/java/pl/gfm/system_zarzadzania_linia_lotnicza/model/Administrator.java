@@ -6,5 +6,4 @@ import jakarta.persistence.Entity;
 @Entity
 @DiscriminatorValue("ADMIN")
 public class Administrator extends User {
-    // Administrator dziedziczy wszystko z User, nie potrzebuje nowych pól
 }

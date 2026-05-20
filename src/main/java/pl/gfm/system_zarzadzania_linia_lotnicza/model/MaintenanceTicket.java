@@ -16,7 +16,7 @@ public class MaintenanceTicket {
     private String opis;
     private LocalDateTime dataZgloszenia;
     private boolean czyKrytyczna;
-    private String status; // "OPEN" lub "FIXED"
+    private String status;
 
     @ManyToOne
     @JoinColumn(name = "airplane_id")

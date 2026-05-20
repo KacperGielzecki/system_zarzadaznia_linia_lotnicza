@@ -9,6 +9,5 @@ public class Mechanic extends User {
 
     private String certificateNumber;
 
-    public String getCertificateNumber() { return certificateNumber; }
     public void setCertificateNumber(String certificateNumber) { this.certificateNumber = certificateNumber; }
 }

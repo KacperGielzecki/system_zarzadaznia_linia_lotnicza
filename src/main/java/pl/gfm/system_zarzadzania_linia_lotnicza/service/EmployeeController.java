@@ -1,13 +1,13 @@
 package pl.gfm.system_zarzadzania_linia_lotnicza.service;
 
-import jakarta.servlet.http.HttpSession; // IMPORT DLA SESJI
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import pl.gfm.system_zarzadzania_linia_lotnicza.dto.EmployeeForm;
-import pl.gfm.system_zarzadzania_linia_lotnicza.model.Administrator; // IMPORT ADMINA
+import pl.gfm.system_zarzadzania_linia_lotnicza.model.Administrator;
 import pl.gfm.system_zarzadzania_linia_lotnicza.model.User;
 
 @Controller
@@ -21,7 +21,7 @@ public class EmployeeController {
 
     @GetMapping("/dodaj-pracownika")
     public String pokazFormularz(HttpSession session, Model model) {
-        // WALIDACJA UPRAWNIEŃ: Tylko Administrator ma dostęp do zarządzania kadrami
+
         User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
         if (uzytkownik == null || !(uzytkownik instanceof Administrator)) {
             return "redirect:/login?error=BrakDostepu";
@@ -33,7 +33,6 @@ public class EmployeeController {
 
     @PostMapping("/dodaj-pracownika")
     public String zapiszPracownika(@ModelAttribute("employeeForm") EmployeeForm form, HttpSession session, Model model) {
-        // WALIDACJA UPRAWNIEŃ: Blokada wysłania formularza przez osoby postronne
         User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
         if (uzytkownik == null || !(uzytkownik instanceof Administrator)) {
             return "redirect:/login?error=BrakDostepu";
@@ -42,9 +41,9 @@ public class EmployeeController {
         try {
             employeeService.registerEmployee(form);
             model.addAttribute("success", "Pomyślnie dodano pracownika: " + form.getFirstName() + " " + form.getLastName());
-            model.addAttribute("employeeForm", new EmployeeForm()); // Czyścimy formularz po sukcesie
+            model.addAttribute("employeeForm", new EmployeeForm());
         } catch (IllegalArgumentException e) {
-            model.addAttribute("error", e.getMessage()); // Przekazujemy treść błędu (np. zły PESEL)
+            model.addAttribute("error", e.getMessage());
         }
         return "dodaj-pracownika";
     }

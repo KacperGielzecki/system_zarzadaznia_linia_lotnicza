@@ -11,8 +11,6 @@ public class EmployeeForm {
     private LocalDate medExams;
     private LocalDate licenseDate;
     private String certNumber;
-
-    // NOWE POLE (Zadanie 09.04)
     private String allowedModels;
 
     public String getFirstName() { return firstName; }
@@ -21,11 +19,8 @@ public class EmployeeForm {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public String getPesel() { return pesel; }
     public void setPesel(String pesel) { this.pesel = pesel; }
-
-    // Getter i Setter dla Email
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
     public String getCertNumber() { return certNumber; }

@@ -41,7 +41,7 @@ public class LoginController {
 
         User user = userOpt.get();
 
-        // Weryfikacja hasła (w naszym przypadku PESEL)
+
         if (!user.getPesel().equals(pesel)) {
             model.addAttribute("error", "Nieprawidłowy adres e-mail lub PESEL!");
             return "logowanie";
@@ -52,10 +52,8 @@ public class LoginController {
             return "logowanie";
         }
 
-        // Zapisujemy zalogowanego użytkownika w sesji przeglądarki
         session.setAttribute("zalogowanyUzytkownik", user);
 
-        // KIEROWANIE DO ODPOWIEDNIEGO PANELU NA PODSTAWIE INSTANCEOF
         if (user instanceof Administrator) {
             return "redirect:/dodaj-pracownika";
         } else if (user instanceof Dispatcher) {
@@ -74,7 +72,7 @@ public class LoginController {
 
     @GetMapping("/logout")
     public String wyloguj(HttpSession session) {
-        session.invalidate(); // Czyszczenie sesji
+        session.invalidate();
         return "redirect:/login";
     }
 }

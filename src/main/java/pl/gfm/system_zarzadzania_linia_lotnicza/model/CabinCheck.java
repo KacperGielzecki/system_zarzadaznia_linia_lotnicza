@@ -15,7 +15,6 @@ public class CabinCheck {
     @JoinColumn(name = "flight_id")
     private Flight flight;
 
-    // Pamiętaj, żeby dodać też konstruktory, gettery i settery!
     public CabinCheck() {}
 
     public Long getId() { return id; }

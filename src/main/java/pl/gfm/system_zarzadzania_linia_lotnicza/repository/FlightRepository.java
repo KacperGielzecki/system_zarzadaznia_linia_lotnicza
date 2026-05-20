@@ -6,5 +6,4 @@ import pl.gfm.system_zarzadzania_linia_lotnicza.model.Flight;
 
 @Repository
 public interface FlightRepository extends JpaRepository<Flight, Long> {
-    // Tutaj na razie wystarczą podstawowe metody zapisu i odczytu z JpaRepository
 }

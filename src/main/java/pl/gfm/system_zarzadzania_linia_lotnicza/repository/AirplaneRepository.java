@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface AirplaneRepository extends JpaRepository<Airplane, Long> {
-    // Ta metoda pozwoli Klaudii wyświetlić w kalendarzu tylko sprawne maszyny
     List<Airplane> findByFunctionalTrue();
 }

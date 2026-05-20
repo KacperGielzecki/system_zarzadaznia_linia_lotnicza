@@ -64,11 +64,9 @@ public class FlightController {
         }
 
         try {
-            // Wykorzystujemy serwis, który sprawdza uprawnienia, odpoczynek i liczy paliwo!
             flightService.scheduleFlight(route, planeId, pilotId, departureTime, distance, cargoWeight, passengerWeight);
             return "redirect:/kalendarz?success=LotZaplanowany";
         } catch (IllegalArgumentException e) {
-            // W razie błędu (np. pilot bez uprawnień) wracamy do kalendarza z błędem
             model.addAttribute("error", e.getMessage());
             model.addAttribute("scheduledFlights", flightService.getAllFlights());
             model.addAttribute("availablePlanes", flightService.getAvailablePlanes());
@@ -118,7 +116,6 @@ public class FlightController {
         ticket.setStatus("FIXED");
         maintenanceTicketRepository.save(ticket);
 
-        // Sprawdzenie czy samolot może wrócić do służby
         Airplane plane = ticket.getAirplane();
         boolean stillHasCritical = plane.getTickets().stream()
                 .anyMatch(t -> t.isCzyKrytyczna() && "OPEN".equals(t.getStatus()));
@@ -136,18 +133,14 @@ public class FlightController {
     public String panelZalogi(HttpSession session, Model model) {
         User uzytkownik = (User) session.getAttribute("zalogowanyUzytkownik");
 
-        // 1. Sprawdzenie uprawnień
         if (uzytkownik == null || !(uzytkownik instanceof Pilot)) {
             return "redirect:/login?error=BrakDostepu";
         }
 
-        // 2. Pobranie wszystkich lotów przypisanych do tego konkretnego pilota
-        // Używamy strumienia, aby wyfiltrować tylko te loty, które należą do zalogowanego pilota
         List<Flight> myFlights = flightRepository.findAll().stream()
                 .filter(f -> f.getPilot() != null && f.getPilot().getId().equals(uzytkownik.getId()))
                 .toList();
 
-        // 3. Przekazanie listy do modelu
         model.addAttribute("allFlights", myFlights);
 
         return "panel-zalogi";
@@ -180,7 +173,7 @@ public class FlightController {
         ticket.setDataZgloszenia(LocalDateTime.now());
 
         if (czyKrytyczna) {
-            plane.setFunctional(false); // Automatyczna blokada
+            plane.setFunctional(false);
             airplaneRepository.save(plane);
         }
 

@@ -17,19 +17,16 @@ public class EmployeeService {
     }
 
     public void registerEmployee(EmployeeForm form) {
-        // 1. Sprawdzamy czy dane nie są puste (Imię, Nazwisko, PESEL)
         if (form.getFirstName() == null || form.getFirstName().isBlank() ||
                 form.getLastName() == null || form.getLastName().isBlank() ||
                 form.getPesel() == null || form.getPesel().isBlank()) {
             throw new IllegalArgumentException("Imię, nazwisko oraz PESEL są wymagane!");
         }
 
-        // 2. Walidacja PESEL: Musi składać się z dokładnie 11 cyfr
         if (!form.getPesel().matches("\\d{11}")) {
             throw new IllegalArgumentException("Numer PESEL musi składać się z dokładnie 11 cyfr!");
         }
 
-        // 3. Walidacja E-mail: Jeśli wpisany, musi zawierać '@' oraz poprawną domenę
         if (form.getEmail() != null && !form.getEmail().isBlank()) {
             String emailRegex = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";
             if (!form.getEmail().matches(emailRegex)) {
@@ -94,7 +91,6 @@ public class EmployeeService {
                 break;
 
             case "DYSPOZYTOR":
-                // ZMIANA: Teraz tworzymy dedykowany obiekt klasy Dispatcher
                 newUser = new Dispatcher();
                 break;
 

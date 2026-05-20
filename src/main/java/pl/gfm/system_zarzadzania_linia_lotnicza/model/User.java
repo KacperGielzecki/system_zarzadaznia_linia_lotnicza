@@ -11,19 +11,13 @@ public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String firstName;
     private String lastName;
-
     @Column(unique = true, nullable = false)
     private String pesel;
-
     @Column(unique = true, nullable = false)
     private String email;
-
     private boolean active = true;
-
-    // NOWE POLE (Zadanie 16.04)
     private LocalDateTime lastFlightEndTime;
 
     public Long getId() { return id; }
@@ -35,7 +29,6 @@ public abstract class User {
     public String getPesel() { return pesel; }
     public void setPesel(String pesel) { this.pesel = pesel; }
 
-    // Getter i Setter dla Email
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
